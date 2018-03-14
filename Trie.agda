@@ -25,8 +25,11 @@ infix 6 _×_
 infix 5 _,_
 
 module TrieM (A : Set)(equal : A → A → Bool) where
-  data Trie (A : Set) : Set where
-    trie : List (A × Trie A) → Trie A
+  record Trie (A : Set) : Set where
+    inductive
+    constructor trie
+    field
+      children : List (A × Trie A)
 
   get-child : Trie A → A → Optional (Trie A)
   get-child (trie []) a = None
