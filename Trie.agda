@@ -30,30 +30,31 @@ module TrieM (A : Set)(equal : A → A → Bool) where
     constructor trie
     field
       children : List (A × Trie A)
+      is-end : Bool
 
   get-child : Trie A → A → Optional (Trie A)
-  get-child (trie []) a = None
-  get-child (trie ((a' , t) ∷ cs)) a =
+  get-child (trie [] _) a = None
+  get-child (trie ((a' , t) ∷ cs) e) a =
     if (equal a a')
     then (Some t)
-    else (get-child (trie cs) a)
+    else (get-child (trie cs e) a)
 
   add-child : Trie A → A → Trie A → Trie A
-  add-child (trie cs) a c = trie ((a , c) ∷ cs)
+  add-child (trie cs b) a c = trie ((a , c) ∷ cs) b
 
   replace-child : Trie A → A → Trie A → Trie A
-  replace-child (trie []) a c = trie []
-  replace-child (trie ((a' , t) ∷ xs)) a c =
+  replace-child (trie [] b) a c = trie [] b
+  replace-child (trie ((a' , t) ∷ xs) b) a c =
     if (equal a a')
     then
-      trie ((a , c) ∷ xs)
+      trie ((a , c) ∷ xs) b
     else
-      add-child (replace-child (trie xs) a c) a' t
+      add-child (replace-child (trie xs b) a c) a' t
       
   insert : Trie A → List A → Trie A
-  insert t [] = t
+  insert (trie cs _) [] = trie cs true
   insert t (x ∷ xs) with (get-child t x)
-  insert t (x ∷ xs) | None = add-child t x (insert (trie []) xs)
+  insert t (x ∷ xs) | None = add-child t x (insert (trie [] false) xs)
   insert t (x ∷ xs) | Some c = replace-child t x (insert c xs)
 
 module NatTrie where
@@ -72,7 +73,7 @@ module NatTrie where
   open TrieM Nat nat-eq
 
   example₀ : Trie Nat
-  example₀ = trie []
+  example₀ = trie [] false
 
   example₁ = insert example₀ (ℕ₀ ∷ ℕ₁ ∷ ℕ₂ ∷ [])
   example₂ = insert example₁ (ℕ₀ ∷ ℕ₁ ∷ ℕ₀ ∷ [])
