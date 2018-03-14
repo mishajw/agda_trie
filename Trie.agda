@@ -2,10 +2,20 @@
 data _≡_ : {A : Set} → A → A → Set where
   refl : {A : Set} → (a : A) → a ≡ a
 
-data List (A : Set) : Set where
-  [] : List A
-  _∷_ : A → List A → List A
-infixr 5 _∷_
+module ListM  where
+  data List (A : Set) : Set where
+    [] : List A
+    _∷_ : A → List A → List A
+  infixr 5 _∷_
+
+  map : {A B : Set} → (A → B) → List A → List B
+  map f [] = []
+  map f (x ∷ xs) = (f x) ∷ map f xs
+
+  _++_ : {A : Set} → List A → List A → List A
+  [] ++ ys = ys
+  (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+open ListM public
 
 data Optional (A : Set) : Set where
   None : Optional A
@@ -50,12 +60,23 @@ module TrieM (A : Set)(equal : A → A → Bool) where
       trie ((a , c) ∷ xs) b
     else
       add-child (replace-child (trie xs b) a c) a' t
-      
+
   insert : Trie A → List A → Trie A
   insert (trie cs _) [] = trie cs true
   insert t (x ∷ xs) with (get-child t x)
   insert t (x ∷ xs) | None = add-child t x (insert (trie [] false) xs)
   insert t (x ∷ xs) | Some c = replace-child t x (insert c xs)
+
+  all-words : Trie A → List (List A)
+  all-words (trie children is-end) = our-words is-end ++ child-words children where
+
+    our-words : Bool → List (List A)
+    our-words true = [] ∷ []
+    our-words false = []
+
+    child-words : List (A × Trie A) → List (List A)
+    child-words [] = []
+    child-words ((a , t) ∷ cs) = (map (_∷_ a) (all-words t)) ++ (child-words cs)
 
 module NatTrie where
   data Nat : Set where
@@ -77,3 +98,5 @@ module NatTrie where
 
   example₁ = insert example₀ (ℕ₀ ∷ ℕ₁ ∷ ℕ₂ ∷ [])
   example₂ = insert example₁ (ℕ₀ ∷ ℕ₁ ∷ ℕ₀ ∷ [])
+  words₁ = all-words example₁
+  words₂ = all-words example₂
